@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental AI Assistant | Smart Healthcare Solutions</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-tooth"></i>
+                <span>DentalAI Assistant</span>
+            </div>
+            <div class="header-info">
+                <span class="status-indicator">
+                    <i class="fas fa-circle"></i> System Online
+                </span>
+                <button class="btn-metrics" onclick="showMetrics()">
+                    <i class="fas fa-chart-line"></i> Metrics
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3>Quick Actions</h3>
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="sendQuickQuery('What are your office hours?')">
+                    <i class="fas fa-clock"></i>
+                    Office Hours
+                </button>
+                <button class="quick-btn" onclick="sendQuickQuery('I need to schedule an appointment')">
+                    <i class="fas fa-calendar"></i>
+                    Book Appointment
+                </button>
+                <button class="quick-btn" onclick="sendQuickQuery('What insurance do you accept?')">
+                    <i class="fas fa-shield-alt"></i>
+                    Insurance Info
+                </button>
+                <button class="quick-btn" onclick="sendQuickQuery('I have a dental emergency')">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Emergency Care
+                </button>
+                <button class="quick-btn" onclick="sendQuickQuery('How much does a root canal cost?')">
+                    <i class="fas fa-dollar-sign"></i>
+                    Pricing Info
+                </button>
+                <button class="quick-btn" onclick="sendQuickQuery('Tell me about teeth cleaning')">
+                    <i class="fas fa-teeth"></i>
+                    Procedures
+                </button>
+            </div>
+
+            <div class="user-settings">
+                <h3>User Settings</h3>
+                <div class="setting-group">
+                    <label for="userRole">Role:</label>
+                    <select id="userRole">
+                        <option value="patient">Patient</option>
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="userId">User ID:</label>
+                    <input type="text" id="userId" value="demo_user" />
+                </div>
+            </div>
+
+            <div class="api-info">
+                <h3>API Status</h3>
+                <div id="apiStatus" class="api-status">
+                    <i class="fas fa-sync fa-spin"></i> Checking...
+                </div>
+            </div>
+        </aside>
+
+        <!-- Chat Interface -->
+        <main class="chat-container">
+            <div class="chat-header">
+                <div>
+                    <h2>AI Dental Assistant</h2>
+                    <span class="chat-subtitle">Ask me anything about our dental services</span>
+                </div>
+                <button onclick="clearChat()" class="btn-clear">
+                    <i class="fas fa-trash"></i> Clear Chat
+                </button>
+            </div>
+
+            <div id="chatMessages" class="chat-messages">
+                <!-- Welcome Message -->
+                <div class="message bot-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            <p>👋 Hello! I'm your AI Dental Assistant. I can help you with:</p>
+                            <ul>
+                                <li>📅 Scheduling appointments</li>
+                                <li>🏥 Insurance coverage information</li>
+                                <li>🦷 Dental procedures and treatments</li>
+                                <li>💰 Pricing and payment options</li>
+                                <li>🚨 Emergency care information</li>
+                            </ul>
+                            <p>How can I assist you today?</p>
+                        </div>
+                        <div class="message-time">Just now</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="userInput" 
+                        placeholder="Type your question here..."
+                        onkeypress="handleKeyPress(event)"
+                    />
+                    <button id="sendBtn" onclick="sendMessage()" class="send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="input-hint">
+                    Press Enter to send • Supports natural language queries
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Panel -->
+        <aside class="right-panel">
+            <h3>Response Details</h3>
+            <div id="responseDetails" class="response-details">
+                <p class="placeholder-text">Response details and citations will appear here</p>
+            </div>
+
+            <h3>Agent Activity</h3>
+            <div id="agentActivity" class="agent-activity">
+                <p class="placeholder-text">Agent trace will appear here</p>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <button id="scrollToTop" onclick="scrollToTop()" class="scroll-top-btn">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- Metrics Modal -->
+    <div id="metricsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>System Metrics</h2>
+                <span class="close" onclick="closeMetrics()">&times;</span>
+            </div>
+            <div id="metricsContent" class="metrics-content">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading metrics...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>
