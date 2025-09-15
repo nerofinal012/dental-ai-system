@@ -1,0 +1,3 @@
+@echo off
+echo Starting Dental AI System with Docker...
+docker-compose -f docker-compose.simple.yml up --build

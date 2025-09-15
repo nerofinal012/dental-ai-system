@@ -1,22 +1,17 @@
-version: '3.8'
+version: '3'
 
 services:
   db:
     image: ankane/pgvector:latest
     container_name: dental-db
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=dental
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dental
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -25,6 +20,22 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+
+  api:
+    build: .
+    container_name: dental-api
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/dental
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+    command: python main.py
 
 volumes:
   postgres_data:

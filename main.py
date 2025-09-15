@@ -133,58 +133,6 @@ class AgentResponse(BaseModel):
 
 # ==================== Simple Search & Agents ====================
 
-# Add this function after your imports in main.py
-def check_content_safety(text: str) -> tuple[bool, str]:
-    """Check if content is appropriate for dental assistant"""
-    
-    # Inappropriate content patterns
-    inappropriate_keywords = [
-        'sexual', 'nude', 'porn', 'xxx', 'sex', 'erotic',
-        'violence', 'weapon', 'drug', 'illegal',
-        'hack', 'exploit', 'injection', 'malware'
-    ]
-    
-    text_lower = text.lower()
-    
-    for keyword in inappropriate_keywords:
-        if keyword in text_lower:
-            return False, "I'm a dental practice assistant and can only help with dental-related questions. Please keep our conversation professional and focused on dental health topics."
-    
-    return True, ""
-
-def check_conversational_intent(text: str) -> tuple[bool, str]:
-    """Check if user is trying to have casual conversation"""
-    
-    conversational_patterns = {
-        'greeting': ['hi', 'hello', 'hey', 'sup', 'yo', 'greetings'],
-        'how_are_you': ['how are you', 'how do you do', 'what\'s up', 'wassup'],
-        'personal': ['who are you', 'what are you', 'are you real', 'are you human'],
-        'offtopic': ['tell me a joke', 'sing a song', 'write a poem', 'play a game']
-    }
-    
-    text_lower = text.lower().strip()
-    
-    # Check greetings
-    if text_lower in conversational_patterns['greeting']:
-        return True, "Hello! I'm your AI Dental Assistant. I can help you with scheduling appointments, insurance questions, dental procedures, and emergency care information. What dental-related question can I help you with today?"
-    
-    # Check how are you
-    for pattern in conversational_patterns['how_are_you']:
-        if pattern in text_lower:
-            return True, "I'm functioning well and ready to help with your dental needs! How can I assist you with dental services today?"
-    
-    # Check personal questions
-    for pattern in conversational_patterns['personal']:
-        if pattern in text_lower:
-            return True, "I'm an AI assistant specialized in dental practice services. I can help you with appointments, insurance, procedures, and dental health questions. What would you like to know?"
-    
-    # Check off-topic requests
-    for pattern in conversational_patterns['offtopic']:
-        if pattern in text_lower:
-            return True, "I'm specifically designed to help with dental-related questions. I can assist with appointments, insurance, procedures, costs, and emergency care. What dental topic can I help you with?"
-    
-    return False, ""
-
 def search_documents(query: str, tenant_id: str, doc_types: List[str] = None) -> List[Dict[str, Any]]:
     """Enhanced keyword search in mock documents"""
     results = []
@@ -238,6 +186,57 @@ def detect_and_redact_phi(text: str) -> tuple[str, bool]:
             redacted = re.sub(pattern, f'[{phi_type.upper()}_REDACTED]', redacted)
     
     return redacted, detected
+
+def check_content_safety(text: str) -> tuple[bool, str]:
+    """Check if content is appropriate for dental assistant"""
+    
+    # Inappropriate content patterns
+    inappropriate_keywords = [
+        'sexual', 'nude', 'porn', 'xxx', 'sex', 'erotic',
+        'violence', 'weapon', 'drug', 'illegal',
+        'hack', 'exploit', 'injection', 'malware'
+    ]
+    
+    text_lower = text.lower()
+    
+    for keyword in inappropriate_keywords:
+        if keyword in text_lower:
+            return False, "I'm a dental practice assistant and can only help with dental-related questions. Please keep our conversation professional and focused on dental health topics."
+    
+    return True, ""
+
+def check_conversational_intent(text: str) -> tuple[bool, str]:
+    """Check if user is trying to have casual conversation"""
+    
+    text_lower = text.lower().strip()
+    
+    # Don't treat dental-related questions as conversational
+    dental_keywords = ['office', 'hours', 'insurance', 'appointment', 'dental', 'tooth', 'teeth', 
+                       'cleaning', 'cavity', 'root canal', 'emergency', 'cost', 'price']
+    
+    for keyword in dental_keywords:
+        if keyword in text_lower:
+            return False, ""  # This is a dental query, not casual conversation
+    
+    # Only handle pure greetings and personal questions
+    greetings = ['hi', 'hello', 'hey', 'sup', 'yo']
+    if text_lower in greetings:
+        return True, "Hello! I'm your AI Dental Assistant. I can help you with scheduling appointments, insurance questions, dental procedures, and emergency care information. What dental-related question can I help you with today?"
+    
+    # Handle "what/who are you" only as exact matches
+    if text_lower == "what are you" or text_lower == "who are you":
+        return True, "I'm an AI assistant specialized in dental practice services. I can help you with appointments, insurance, procedures, and dental health questions. What would you like to know?"
+    
+    # Handle how are you
+    if text_lower == "how are you":
+        return True, "I'm functioning well and ready to help with your dental needs! How can I assist you with dental services today?"
+    
+    # Off-topic requests
+    offtopic = ['tell me a joke', 'sing a song', 'write a poem', 'play a game']
+    if text_lower in offtopic:
+        return True, "I'm specifically designed to help with dental-related questions. I can assist with appointments, insurance, procedures, costs, and emergency care. What dental topic can I help you with?"
+    
+    return False, ""
 
 async def generate_answer(query: str, search_results: List[Dict], use_openai: bool = True) -> str:
     """Generate answer using OpenAI or mock response"""
@@ -306,8 +305,8 @@ async def ask_question(request: QueryRequest):
     
     try:
         logger.info(f"Processing query: {request.query[:50]}... [trace_id: {trace_id}]")
-
-         # Step 1: Check content safety
+        
+        # Step 1: Check content safety
         is_safe, safety_message = check_content_safety(request.query)
         if not is_safe:
             return QueryResponse(
@@ -334,22 +333,17 @@ async def ask_question(request: QueryRequest):
         if phi_detected:
             logger.warning(f"PHI detected and redacted in query [trace_id: {trace_id}]")
         
-        # Step 4: PHI detection and redaction
-        safe_query, phi_detected = detect_and_redact_phi(request.query)
-        if phi_detected:
-            logger.warning(f"PHI detected and redacted in query [trace_id: {trace_id}]")
-        
-        # Step 5: Search documents
+        # Step 4: Search documents
         search_results = search_documents(
             safe_query,
             request.tenant_id,
             ["policy", "procedure", "faq"]
         )
         
-        # Step 6: Generate answer
+        # Step 5: Generate answer
         answer = await generate_answer(safe_query, search_results)
         
-        # Step 7: Prepare citations
+        # Step 6: Prepare citations
         citations = [
             Citation(
                 doc_id=doc["doc_id"],
